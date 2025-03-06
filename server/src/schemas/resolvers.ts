@@ -9,7 +9,7 @@ interface AddUserArgs {
 }
 }
 
-interface LonginUserArgs {
+interface LoginUserArgs {
     email: string;
     password: string;
 }
@@ -19,7 +19,11 @@ interface UserArgs {
 }
 
 interface BookArgs {
+  input: {
     bookId: string;
+    bookTitle: string;
+    bookAuthor: string;
+}
 }
 
 interface saveBookArgs {
@@ -37,15 +41,15 @@ const resolvers = {
     books: async () => {
       return await Book.find().sort({ createdAt: -1 });
     },
-    book: async (_parent: any, { bookId }: BookArgs) => {
-      return await Book.findOne({ _id: bookId });
+    book: async (_parent: any, { input }: BookArgs) => {
+      return await Book.findOne({ _id: input.bookId });
     },
     // Query to get the authenticated user's information
     // The 'me' query relies on the context to check if the user is authenticated
     me: async (_parent: any, _args: any, context: any) => {
       // If the user is authenticated, find and return the user's information along with their thoughts
       if (context.user) {
-        return User.findOne({ _id: context.user._id }).populate('thoughts');
+        return User.findOne({ _id: context.user._id }).populate('books');
       }
       // If the user is not authenticated, throw an AuthenticationError
       throw new AuthenticationError('Could not authenticate user.');
@@ -86,27 +90,27 @@ const resolvers = {
       // Return the token and the user
       return { token, user };
     },
-    addThought: async (_parent: any, { input }: AddThoughtArgs, context: any) => {
+    addBook: async (_parent: any, { bookData }: saveBookArgs, context: any) => {
       if (context.user) {
-        const thought = await Thought.create({ ...input });
+        const book= await Book.create({ ...bookData });
 
         await User.findOneAndUpdate(
           { _id: context.user._id },
-          { $addToSet: { thoughts: thought._id } }
+          { $addToSet: { thoughts: book._id } }
         );
 
-        return thought;
+        return book;
       }
       throw AuthenticationError;
       ('You need to be logged in!');
     },
-    addComment: async (_parent: any, { thoughtId, commentText }: AddCommentArgs, context: any) => {
+    addComment: async (_parent: any, { bookData }: saveBookArgs, context: any) => {
       if (context.user) {
-        return Thought.findOneAndUpdate(
-          { _id: thoughtId },
+        return Book.findOneAndUpdate(
+          { _id: bookData.input.bookId },
           {
             $addToSet: {
-              comments: { commentText, commentAuthor: context.user.username },
+              savedBook: { bookData, bookAuthor: context.user.username },
             },
           },
           {
@@ -117,44 +121,27 @@ const resolvers = {
       }
       throw AuthenticationError;
     },
-    removeThought: async (_parent: any, { thoughtId }: ThoughtArgs, context: any) => {
+    removeBook: async (_parent: any, { bookData }: saveBookArgs, context: any) => {
       if (context.user) {
-        const thought = await Thought.findOneAndDelete({
-          _id: thoughtId,
-          thoughtAuthor: context.user.username,
+        const book = await Book.findOneAndDelete({
+          _id: bookData.input.bookId,
+          bookAuthor: context.user.username,
         });
 
-        if(!thought){
+        if(!book){
           throw AuthenticationError;
         }
 
         await User.findOneAndUpdate(
           { _id: context.user._id },
-          { $pull: { thoughts: thought._id } }
+          { $pull: { books: book._id } }
         );
 
-        return thought;
+        return book;
       }
       throw AuthenticationError;
-    },
-    removeComment: async (_parent: any, { thoughtId, commentId }: RemoveCommentArgs, context: any) => {
-      if (context.user) {
-        return Thought.findOneAndUpdate(
-          { _id: thoughtId },
-          {
-            $pull: {
-              comments: {
-                _id: commentId,
-                commentAuthor: context.user.username,
-              },
-            },
-          },
-          { new: true }
-        );
-      }
-      throw AuthenticationError;
-    },
-  },
+    }
+  }
 };
 
 export default resolvers;
