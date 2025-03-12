@@ -96,30 +96,13 @@ const resolvers = {
 
         await User.findOneAndUpdate(
           { _id: context.user._id },
-          { $addToSet: { thoughts: book._id } }
+          { $addToSet: { books: book._id } }
         );
 
         return book;
       }
       throw AuthenticationError;
       ('You need to be logged in!');
-    },
-    addComment: async (_parent: any, { bookData }: saveBookArgs, context: any) => {
-      if (context.user) {
-        return Book.findOneAndUpdate(
-          { _id: bookData.input.bookId },
-          {
-            $addToSet: {
-              savedBook: { bookData, bookAuthor: context.user.username },
-            },
-          },
-          {
-            new: true,
-            runValidators: true,
-          }
-        );
-      }
-      throw AuthenticationError;
     },
     removeBook: async (_parent: any, { bookData }: saveBookArgs, context: any) => {
       if (context.user) {
