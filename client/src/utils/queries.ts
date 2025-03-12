@@ -16,7 +16,8 @@ export const QUERY_USER = gql`
                 link
             }
         }
-    }`;
+    }
+`;
 export const QUERY_BOOKS = gql`
     query getBooks {
         books {
@@ -26,9 +27,9 @@ export const QUERY_BOOKS = gql`
             title
         }
     }
-        `;
+`;
     
-    export const QUERY_SINGLE_BOOK = gql`
+export const QUERY_SINGLE_BOOK = gql`
     query getSingleBook($bookId: ID!) {
         book(bookId: $bookId) {
             bookId
@@ -37,7 +38,7 @@ export const QUERY_BOOKS = gql`
             title
         }
     }
-        `;
+`;
 
 export const QUERY_ME = gql`
     query me {
@@ -51,6 +52,7 @@ export const QUERY_ME = gql`
                 authors
                 description
                 title
-}
-}
+            }
+        }
+    }
 `;
