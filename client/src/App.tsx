@@ -6,6 +6,8 @@ import {
   createHttpLink,
 } from "@apollo/client";
 import { setContext } from "@apollo/client/link/context";
+import { onError } from "apollo-link-error";
+import { ApolloLink } from "@apollo/client";
 import { Outlet } from "react-router-dom";
 
 import Navbar from "./components/Navbar";
@@ -24,10 +26,23 @@ const authLink = setContext((_, { headers }) => {
   };
 });
 
+const errorLink = onError(({ graphQLErrors, networkError }) => {
+  if (graphQLErrors) {
+    console.log("graphQLErrors", graphQLErrors);
+  }
+  if (networkError) {
+    console.log("networkError", networkError);
+  }
+});
+
 const client = new ApolloClient({
-  link: authLink.concat(httpLink),
+  link: ApolloLink.from([
+    authLink.concat(httpLink),
+    errorLink as unknown as ApolloLink,
+  ]),
   cache: new InMemoryCache(),
 });
+
 function App() {
   return (
     <ApolloProvider client={client}>

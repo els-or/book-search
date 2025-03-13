@@ -21,9 +21,12 @@ interface UserArgs {
 interface BookArgs {
   input: {
     bookId: string;
-    bookTitle: string;
-    bookAuthor: string;
-}
+    title: string;
+    authors: string[];
+    description: string;
+    image: string;
+    link: string;
+  }
 }
 
 interface saveBookArgs {
@@ -90,9 +93,9 @@ const resolvers = {
       // Return the token and the user
       return { token, user };
     },
-    addBook: async (_parent: any, { bookData }: saveBookArgs, context: any) => {
+    saveBook: async (_parent: any, bookData: BookArgs, context: any) => {
       if (context.user) {
-        const book= await Book.create({ ...bookData });
+        const book= await Book.create({ ...bookData.input });
 
         await User.findOneAndUpdate(
           { _id: context.user._id },
