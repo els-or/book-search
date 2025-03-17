@@ -45,7 +45,6 @@ const typeDefs = `
     book(bookId: ID!): Book
     me: User
   }
-
   type Mutation {
     addUser(input: UserInput!): Auth
     login(email: String!, password: String!): Auth

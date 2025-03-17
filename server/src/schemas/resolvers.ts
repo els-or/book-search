@@ -33,15 +33,22 @@ interface saveBookArgs {
     bookData: BookArgs;
 }
 
+interface removeBookArgs {
+    bookId: string;
+}
+
 const resolvers = {
   Query: {
     users: async () => {
+      console.log("Fetching all users");
       return User.find().populate('savedBooks');
     },
     user: async (_parent: any, { username }: UserArgs) => {
+      console.log("Fetching user with username:", username);
       return User.findOne({ username }).populate('savedBooks');
     },
     books: async () => {
+      console.log("Fetching all books");
       return await Book.find().sort({ createdAt: -1 });
     },
     book: async (_parent: any, { input }: BookArgs) => {
@@ -52,7 +59,7 @@ const resolvers = {
     me: async (_parent: any, _args: any, context: any) => {
       // If the user is authenticated, find and return the user's information along with their thoughts
       if (context.user) {
-        return User.findOne({ _id: context.user._id }).populate('books');
+        return User.findOne({ _id: context.user._id }).populate('savedBooks');
       }
       // If the user is not authenticated, throw an AuthenticationError
       throw new AuthenticationError('Could not authenticate user.');
@@ -95,35 +102,34 @@ const resolvers = {
     },
     saveBook: async (_parent: any, bookData: BookArgs, context: any) => {
       if (context.user) {
-        const book= await Book.create({ ...bookData.input });
-
-        await User.findOneAndUpdate(
+        const book = await Book.create({ ...bookData.input });
+        const results = await User.findOneAndUpdate(
           { _id: context.user._id },
-          { $addToSet: { books: book._id } }
+          { $addToSet: { savedBooks: book } },
+          { new: true, runValidators: true }
         );
-
+        console.log("user updated", results);
         return book;
       }
       throw AuthenticationError;
       ('You need to be logged in!');
     },
-    removeBook: async (_parent: any, { bookData }: saveBookArgs, context: any) => {
+    removeBook: async (_parent: any, bookData: removeBookArgs, context: any) => {
+      console.log("removing book", bookData.bookId);
       if (context.user) {
         const book = await Book.findOneAndDelete({
-          _id: bookData.input.bookId,
-          bookAuthor: context.user.username,
+          bookId: bookData.bookId
         });
-
+        console.log("book removed", book);
         if(!book){
           throw AuthenticationError;
         }
 
-        await User.findOneAndUpdate(
+        const user = await User.findOneAndUpdate(
           { _id: context.user._id },
-          { $pull: { books: book._id } }
+          { $pull: { savedBooks: book } }
         );
-
-        return book;
+        return user;
       }
       throw AuthenticationError;
     }
