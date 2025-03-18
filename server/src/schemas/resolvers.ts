@@ -29,10 +29,6 @@ interface BookArgs {
   }
 }
 
-interface saveBookArgs {
-    bookData: BookArgs;
-}
-
 interface removeBookArgs {
     bookId: string;
 }
